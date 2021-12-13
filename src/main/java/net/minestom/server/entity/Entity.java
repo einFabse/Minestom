@@ -30,6 +30,7 @@ import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.network.packet.server.CachedPacket;
 import net.minestom.server.network.packet.server.ServerPacket;
 import net.minestom.server.network.packet.server.play.*;
+import net.minestom.server.permission.DefaultPermissionHandler;
 import net.minestom.server.permission.Permission;
 import net.minestom.server.permission.PermissionHandler;
 import net.minestom.server.potion.Potion;
@@ -145,13 +146,13 @@ public class Entity implements Viewable, Tickable, TagHandler, PermissionHandler
             this instanceof Player player ? entity -> entity.viewEngine.viewableOption.removal.accept(player) : null);
     protected final Set<Player> viewers = viewEngine.asSet();
     private final NBTCompound nbtCompound = new NBTCompound();
-    private final Set<Permission> permissions = new CopyOnWriteArraySet<>();
 
     protected UUID uuid;
     private boolean isActive; // False if entity has only been instanced without being added somewhere
     private boolean removed;
     private boolean shouldRemove;
     private long scheduledRemoveTime;
+    private PermissionHandler permissionHandler;
 
     private final Set<Entity> passengers = new CopyOnWriteArraySet<>();
     protected EntityType entityType; // UNSAFE to change, modify at your own risk
@@ -181,6 +182,7 @@ public class Entity implements Viewable, Tickable, TagHandler, PermissionHandler
         this.position = Pos.ZERO;
         this.previousPosition = Pos.ZERO;
         this.lastSyncedPosition = Pos.ZERO;
+        this.permissionHandler = new DefaultPermissionHandler();
 
         setBoundingBox(entityType.width(), entityType.height(), entityType.width());
 
@@ -494,7 +496,28 @@ public class Entity implements Viewable, Tickable, TagHandler, PermissionHandler
     @NotNull
     @Override
     public Set<Permission> getAllPermissions() {
-        return permissions;
+        return this.permissionHandler.getAllPermissions();
+    }
+
+    /**
+     * Called to set a new PermissionHandler for this entity.
+     * This method is intended to be used by a Permissions Plugin.
+     *
+     * @param permissionHandler the new PermissionHandler that should be called for this entity
+     */
+    public void setPermissionHandler(@NotNull PermissionHandler permissionHandler) {
+        Check.notNull(permissionHandler, "PermissionHandler cannot be null!");
+        this.permissionHandler = permissionHandler;
+    }
+
+    /**
+     * Returns the entity's PermissionHandler.
+     *
+     * @return the entity's PermissionHandler
+     */
+    @NotNull
+    public PermissionHandler getPermissionHandler() {
+        return this.permissionHandler;
     }
 
     /**
